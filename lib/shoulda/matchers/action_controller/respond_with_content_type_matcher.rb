@@ -17,13 +17,26 @@ module Shoulda # :nodoc:
       #   it { should respond_with_content_type(:text) }
       #   it { should respond_with_content_type('application/rss+xml')  }
       #   it { should respond_with_content_type(/json/) }
-      def respond_with_content_type(content_type)
-        RespondWithContentTypeMatcher.new(content_type)
+      def respond_with_content_type(content_type, &block)
+        RespondWithContentTypeMatcher.new(content_type, self, &block)
       end
 
       class RespondWithContentTypeMatcher # :nodoc:
-        def initialize(content_type)
-          @content_type = look_up_content_type(content_type)
+        def initialize(content_type, context, &block)
+          if block_given?
+            @content_type = content_type
+            @context = context
+            @block = block
+          else
+            @content_type = look_up_content_type(content_type)
+            @context = nil
+            @block = nil
+          end
+        end
+
+        def in_context(context)
+          @context = context
+          self
         end
 
         def description
@@ -32,6 +45,7 @@ module Shoulda # :nodoc:
 
         def matches?(controller)
           @controller = controller
+          @content_type = look_up_content_type(@context.instance_eval(&@block)) if @block
           content_type_matches_regexp? || content_type_matches_string?
         end
 

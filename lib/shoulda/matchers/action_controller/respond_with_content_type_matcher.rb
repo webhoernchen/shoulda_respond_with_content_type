@@ -22,6 +22,14 @@ module Shoulda # :nodoc:
       end
 
       class RespondWithContentTypeMatcher # :nodoc:
+        def self.content_type_method
+          @content_type_method ||= if Rails.version >= '6.0'
+            :media_type
+          else
+            :content_type
+          end
+        end
+
         def initialize(content_type, context, &block)
           if block_given?
             @content_type = content_type
@@ -70,7 +78,7 @@ module Shoulda # :nodoc:
         end
 
         def response_content_type
-          @controller.response.content_type.to_s
+          @controller.response.public_send(self.class.content_type_method).to_s
         end
 
         def look_up_by_extension(extension)
